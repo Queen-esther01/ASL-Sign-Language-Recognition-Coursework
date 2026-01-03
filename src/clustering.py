@@ -7,5 +7,7 @@ class Clustering:
 
 
 if __name__ == "__main__":
+     # data = pd.read_csv('data/clean_dataset/data.csv')
+    # data = data.to_numpy()
     pass
 

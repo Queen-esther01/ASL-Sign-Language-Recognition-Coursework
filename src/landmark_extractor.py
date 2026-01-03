@@ -62,8 +62,9 @@ class LandmarkExtractor:
                             for landmark in hand_landmarks:
                                 landmark_per_hand.append([landmark.x, landmark.y, landmark.z])
                             image_landmarks.append(landmark_per_hand)
-                        image_with_landmarks = self.draw_hand_landmarks(image, image_landmarks)
-                        self.save_image(f'data/clean_images/{stemFileName}/{filename}', image_with_landmarks)
+                        # UNCOMMENT TO SAVE IMAGES WITH LANDMARKS
+                        # image_with_landmarks = self.draw_hand_landmarks(image, image_landmarks)
+                        # self.save_image(f'data/clean_images/{stemFileName}/{filename}', image_with_landmarks)
                         rows.append({
                             'landmark': image_landmarks,
                             'x':  x,
@@ -73,6 +74,7 @@ class LandmarkExtractor:
                         landmarks.append(image_landmarks)
         print(f'landmarks {landmarks[0]}, len {len(landmarks)}')
         print(f"images len: {len(images)}")
+        # UNCOMMENT TO SAVE DATA TO CSV
         # if not os.path.exists('data/clean_dataset'):
         #     os.makedirs('data/clean_dataset')
         # df = pd.DataFrame(rows)
@@ -115,8 +117,3 @@ class LandmarkExtractor:
 if __name__ == '__main__':
     extractor = LandmarkExtractor('models/mediapipe/hand_landmarker.task', 'data/CW2_dataset_final/*')
     landmarks = extractor.extract_landmarks()
-    # data = pd.read_csv('data/clean_dataset/data.csv')
-    # data = data.to_numpy()
-    # print(data[0][2].ndim)
-    # extractor.visualize_landmarks('/Users/star/Documents/MSC-LABS/ai-coursework-2/data/CW2_dataset_final/J/J_sample_417.jpg')
-    # print(landmarks)
