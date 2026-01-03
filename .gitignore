@@ -12,3 +12,4 @@ wheels/
 # data
 data/CW2_dataset_final
 data/clean_images
+data/clean_dataset
