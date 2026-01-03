@@ -1,0 +1,5 @@
+matplotlib>=3.10.8
+mediapipe>=0.10.31
+numpy>=2.4.0
+pandas>=2.3.3
+scikit-learn>=1.8.0
