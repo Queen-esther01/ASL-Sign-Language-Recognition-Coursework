@@ -51,34 +51,34 @@ class LandmarkExtractor:
                     filename = item.split('/')[-1]
                     mp_image = mp.Image.create_from_file(item)
                     hand_landmarker_result = landmarker.detect(mp_image)
+                    landmark_per_hand = []
                     if hand_landmarker_result.hand_landmarks: # Focus on only images with landmarks
                         image_landmarks = []
                         image = cv.imread(item)
                         images.append(image)
                         for hand_landmarks in hand_landmarker_result.hand_landmarks:
-                            landmark_per_hand = []
-                            x = [landmark.x for landmark in hand_landmarks]
-                            y = [landmark.y for landmark in hand_landmarks]
+                            x = [float(landmark.x) for landmark in hand_landmarks]
+                            y = [float(landmark.y) for landmark in hand_landmarks]
                             for landmark in hand_landmarks:
-                                landmark_per_hand.append([landmark.x, landmark.y, landmark.z])
+                                landmark_per_hand.append([float(landmark.x), float(landmark.y), float(landmark.z)])
                             image_landmarks.append(landmark_per_hand)
                         # UNCOMMENT TO SAVE IMAGES WITH LANDMARKS
                         # image_with_landmarks = self.draw_hand_landmarks(image, image_landmarks)
                         # self.save_image(f'data/clean_images/{stemFileName}/{filename}', image_with_landmarks)
                         rows.append({
-                            'landmark': image_landmarks,
+                            'landmark': landmark_per_hand,
                             'x':  x,
                             'y': y,
                             'label': stemFileName,
                         })
-                        landmarks.append(image_landmarks)
+                        landmarks.append(landmark_per_hand)
         print(f'landmarks {landmarks[0]}, len {len(landmarks)}')
         print(f"images len: {len(images)}")
         # UNCOMMENT TO SAVE DATA TO CSV
-        # if not os.path.exists('data/clean_dataset'):
-        #     os.makedirs('data/clean_dataset')
-        # df = pd.DataFrame(rows)
-        # df.to_csv(f'data/clean_dataset/data.csv')
+        if not os.path.exists('data/clean_dataset'):
+            os.makedirs('data/clean_dataset')
+        df = pd.DataFrame(rows)
+        df.to_csv(f'data/clean_dataset/data.csv')
         return landmarks
 
     def draw_hand_landmarks(self, image, hand_landmarks):

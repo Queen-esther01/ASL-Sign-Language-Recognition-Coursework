@@ -21,15 +21,16 @@ class DataLoader:
         labels = []
         for file in sorted(glob.glob(self.dataset_path)):
             for item in sorted(glob.glob(file + '/*')):
-                print(item.split('/')[-1])
+                # print(item.split('/')[-1])
                 grayscale = cv.imread(item, cv.IMREAD_GRAYSCALE)
                 if(grayscale.shape == (256, 256)): # Filter out images that are the wrong dimension.
                     label, _ = self.parse_filename(item)
                     labels.append(label)
                     images.append(grayscale)
-        print(f'loaded {len(images)} images')
-        print(f'image {images[0].ndim}, {images[0].shape}')
-        print(f'labels {len(labels)}')
+        # print(f'loaded {len(images)} images')
+        # print(f'image {images[0].ndim}, {images[0].shape}')
+        # print(f'labels {len(labels)}')
+        return labels
      
 
     def get_class_names(self):
