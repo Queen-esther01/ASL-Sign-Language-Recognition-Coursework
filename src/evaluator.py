@@ -4,32 +4,140 @@ from data_loader import DataLoader
 from collections import Counter
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
+import pandas as pd
 
 class Evaluator:
+    '''Evaluator class for evaluating both the supervised and unsupervised learning models'''
+
     def __init__(self, dataset_path, clean_dataset_path, labels, classes):
         self.dataset_path = dataset_path
         self.clean_dataset_path = clean_dataset_path
         self.labels = labels
         self.classes = classes
 
-    def evaluate_kmeans_on_xy_coordinates(self):
-        clustering = Clustering(len(self.classes), self.clean_dataset_path, self.labels)
-        features, predicted_labels, cluster_centers = clustering.k_means_on_xy_coordinates()
+    def kmeans_evaluation(self, features, predicted_labels):
+        '''Evaluates the K-Means clustering through silhouette score, adjusted rand index, and normalized mutual information'''
+
         silhouette_avg = silhouette_score(features, predicted_labels)
         cluster_to_class = self.map_cluster_to_classes(self.labels, predicted_labels)
+        ari = adjusted_rand_score(self.labels, predicted_labels)
+        nmi = normalized_mutual_info_score(self.labels, predicted_labels)
+        df = pd.DataFrame({'Cluster': predicted_labels, 'Class': self.labels})
+        table = pd.crosstab(df['Cluster'], df['Class'])
+        return table, cluster_to_class, silhouette_avg, ari, nmi
 
-        print(f'Silhouette score: {silhouette_avg}')
-        print(f'Cluster to class mapping: {cluster_to_class}')
+    def evaluate_kmeans_on_xy_coordinates(self):
+        '''Evaluates the K-Means clustering on the XY coordinates'''
+
+        clustering = Clustering(len(self.classes), self.clean_dataset_path, self.labels)
+        features, predicted_labels, cluster_centers, pca_data, pca_centroids = clustering.k_means_on_xy_coordinates()
+        table, cluster_to_class, silhouette_avg, ari, nmi = self.kmeans_evaluation(features, predicted_labels)
+
+        clusters = np.unique(predicted_labels) # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        cmap = plt.cm.get_cmap("tab10", len(clusters))
+
+        # Box 1: Visualize the clusters on the PCA plot
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+        ax1.scatter(pca_data[:,0], pca_data[:,1], c=predicted_labels, cmap=cmap, s=10)
+        handles = [
+            patches.Patch(color=cmap(i), label=f"Cluster {i} - majority class: {cluster_to_class[i]}")
+            for i in range(len(self.classes))
+        ]
+        ax1.scatter(pca_centroids[:,0], pca_centroids[:,1], c="black", marker="x", s=100, label='Centroids')
+        ax1.set_title('K-Means Clustering on X and Y Coordinates with PCA')
+        ax1.legend(handles=handles, title="KMeans clusters", fontsize=9)
+        ax1.set_xlabel("X Coordinate")
+        ax1.set_ylabel("Y Coordinate")
+
+
+        # Box 2: Visualize the cluster-to-class distribution as a heatmap
+        # Create heatmap
+        im = ax2.imshow(table.values, cmap='Blues', aspect='auto')
+        
+        # Add colorbar
+        cbar = ax2.figure.colorbar(im, ax=ax2)
+        cbar.ax.set_ylabel("Count", rotation=-90, va="bottom")
+        
+        # Set ticks and labels
+        ax2.set_xticks(np.arange(len(table.columns)))
+        ax2.set_yticks(np.arange(len(table.index)))
+        ax2.set_xticklabels(table.columns)
+        ax2.set_yticklabels([f"{idx} → {cluster_to_class.get(idx, '?')}" for idx in table.index])
+        
+        # Rotate x labels for readability
+        plt.setp(ax2.get_xticklabels(), rotation=0, ha="center")
+        
+        # Add text annotations in each cell
+        for i in range(len(table.index)):
+            for j in range(len(table.columns)):
+                value = table.values[i, j]
+                # Use white text on dark cells, black on light cells
+                text_color = "white" if value > table.values.max() / 2 else "black"
+                ax2.text(j, i, value, ha="center", va="center", color=text_color, fontsize=9)
+        
+        ax2.set_xlabel("True Class")
+        ax2.set_ylabel("Cluster (→ Majority Class)")
+        ax2.set_title("K-Means on XY: Cluster vs Class Distribution")
+        
+        plt.tight_layout()
+        plt.show()
+        
+        return table, cluster_to_class
 
     def evaluate_kmeans_on_xyz_coordinates(self):
+        '''Evaluates the K-Means clustering on the XYZ coordinates'''
+
         clustering = Clustering(len(self.classes), self.clean_dataset_path, self.labels)
-        features, predicted_labels, cluster_centers = clustering.k_means_on_xyz_coordinates()
-        silhouette_avg = silhouette_score(features, predicted_labels)
-        # self.plot_silhouette_score(silhouette_avg, features, predicted_labels, cluster_centers)
-        print(f'Silhouette score: {silhouette_avg}')
+        features, predicted_labels, cluster_centers, pca_data, pca_centroids = clustering.k_means_on_xyz_coordinates()
+        table, cluster_to_class, silhouette_avg, ari, nmi = self.kmeans_evaluation(features, predicted_labels)
+
+        clusters = np.unique(predicted_labels) # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        cmap = plt.cm.get_cmap("tab10", len(clusters))
+
+        # Box 1: Visualize the clusters on the PCA plot
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+        ax1.scatter(pca_data[:,0], pca_data[:,1], c=predicted_labels, cmap=cmap, s=10)
+        handles = [
+            patches.Patch(color=cmap(i), label=f"Cluster {i} - majority class: {cluster_to_class[i]}")
+            for i in range(len(self.classes))
+        ]
+        ax1.scatter(pca_centroids[:,0], pca_centroids[:,1], c="black", marker="x", s=100, label='Centroids')
+        ax1.set_title('K-Means Clustering on X, Y and Z Coordinates with PCA')
+        ax1.legend(handles=handles, title="KMeans clusters", fontsize=9)
+        ax1.set_xlabel("X Coordinate")
+        ax1.set_ylabel("Y Coordinate")
+
+        # Box 2: Visualize the cluster-to-class distribution as a heatmap
+        im = ax2.imshow(table.values, cmap='Blues', aspect='auto')
+        
+        # Add colorbar
+        cbar = ax2.figure.colorbar(im, ax=ax2)
+        cbar.ax.set_ylabel("Count", rotation=-90, va="bottom")
+        
+        # Set ticks and labels
+        ax2.set_xticks(np.arange(len(table.columns)))
+        ax2.set_yticks(np.arange(len(table.index)))
+        ax2.set_xticklabels(table.columns)
+        ax2.set_yticklabels([f"{idx} → {cluster_to_class.get(idx, '?')}" for idx in table.index])
+        plt.setp(ax2.get_xticklabels(), rotation=0, ha="center")
+        for i in range(len(table.index)):
+            for j in range(len(table.columns)):
+                value = table.values[i, j]
+                text_color = "white" if value > table.values.max() / 2 else "black"
+                ax2.text(j, i, value, ha="center", va="center", color=text_color, fontsize=9)
+        ax2.set_xlabel("True Class")
+        ax2.set_ylabel("Cluster (→ Majority Class)")
+        ax2.set_title("K-Means on XYZ: Cluster vs Class Distribution")
+        plt.tight_layout()
+        plt.show()
 
     def map_cluster_to_classes(self, labels, predicted_labels):
+        '''Maps the predicted clusters to the true classes'''
+
         cluster_to_class = {}
         for cluster in np.unique(predicted_labels):
             true_in_cluster = [
@@ -39,6 +147,8 @@ class Evaluator:
         return cluster_to_class
 
     def plot_silhouette_score(self, silhouette_avg, features, predicted_labels, cluster_centers):
+        '''Plot the silhouette score for the clusters'''
+
         fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.set_size_inches(18, 7)
 
@@ -122,6 +232,16 @@ class Evaluator:
             fontweight="bold",
         )
 
+        plt.show()
+
+    def plot_cluster_class_heatmap(self, table, cluster_to_class, title="Cluster vs Class Distribution"):
+        """
+        Visualize cluster-to-class distribution as a heatmap.
+        """
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        
+        plt.tight_layout()
         plt.show()
 
     def plot_confusion_matrix(self, y_true, y_pred):

@@ -7,6 +7,8 @@ import matplotlib.patches as patches
 import sklearn.cluster as cluster
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from preprocessor import Preprocessor
+from scipy.cluster.hierarchy import dendrogram
 
 class Clustering:
     def __init__(self, k, data, classes):
@@ -15,14 +17,7 @@ class Clustering:
         self.classes = classes
 
     def k_means_on_xy_coordinates(self):
-        data = pd.read_csv(self.data)
-        
-        x = np.array(data['x'].apply(ast.literal_eval).tolist())
-        y = np.array(data['y'].apply(ast.literal_eval).tolist())
-
-        # concatenate x and y arrays -> [[x1, y1], [x2, y2], ...] to [[x1, y1, x2, y2, ...], [x1, y1, x2, y2, ...], ...]
-        # shape should be (n_samples, 42) -> (n_samples, 21 * 2)
-        training_data = np.concatenate((x, y), axis=1)
+        training_data = Preprocessor(self.data).reshape_data()
         training_data = StandardScaler().fit_transform(training_data)
 
         kmeans = cluster.KMeans(n_clusters=self.k, n_init=30, random_state=0)
@@ -33,21 +28,7 @@ class Clustering:
         pca_data = pca.fit_transform(training_data)
         pca_centroids = pca.transform(cluster_centers)
 
-        clusters = np.unique(predicted_labels) # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        cmap = plt.cm.get_cmap("tab10", len(clusters))
-
-        plt.scatter(pca_data[:,0], pca_data[:,1], c=predicted_labels, cmap=cmap, s=10)
-        handles = [
-            patches.Patch(color=cmap(i), label=f"{self.classes[i]}")
-            for i in range(self.k)
-        ]
-        plt.scatter(pca_centroids[:,0], pca_centroids[:,1], c="black", marker="x", s=100, label='Centroids')
-        plt.title('K-Means Clustering on X and Y Coordinates with PCA')
-        plt.legend(handles=handles, title="KMeans clusters", fontsize=9)
-        # plt.show()
-
-        return training_data, predicted_labels, cluster_centers
-
+        return training_data, predicted_labels, cluster_centers, pca_data, pca_centroids
 
     
     def k_means_on_xyz_coordinates(self):
@@ -63,20 +44,61 @@ class Clustering:
         pca_landmarks = pca.fit_transform(features)
         pca_centroids = pca.transform(cluster_centers)
 
-        clusters = np.unique(predicted_labels) # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        cmap = plt.cm.get_cmap("tab10", len(clusters))
+        return features, predicted_labels, cluster_centers, pca_landmarks, pca_centroids
 
-        plt.scatter(pca_landmarks[:,0], pca_landmarks[:,1], c=predicted_labels, cmap=cmap, s=10)
+    def agglomerative_clustering(self):
+        training_data = Preprocessor(self.data).reshape_data()
+        training_data = StandardScaler().fit_transform(training_data)
+
+        clustering = cluster.AgglomerativeClustering(n_clusters=self.k)
+        predicted_labels = clustering.fit_predict(training_data)
+
+        agg = cluster.AgglomerativeClustering(distance_threshold=0, n_clusters=None, compute_distances=True)
+        agg.fit(training_data)
+
+        pca = PCA(n_components = 2, random_state=0)
+        pca_data = pca.fit_transform(training_data)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+        cmap = plt.cm.get_cmap("tab10", len(np.unique(predicted_labels)))
+        ax1.scatter(pca_data[:, 0], pca_data[:, 1], c=predicted_labels, cmap=cmap, s=10)
         handles = [
-            patches.Patch(color=cmap(i), label=f"{self.classes[i]}")
-            for i in range(self.k)
+            patches.Patch(color=cmap(i), label=f"Cluster {i}")
+            for i in range(len(np.unique(predicted_labels)))
         ]
-        plt.scatter(pca_centroids[:,0], pca_centroids[:,1], c="black", marker="x", s=100, label='Centroids')
-        plt.title('K-Means Clustering on X, Y and Z Coordinates with PCA')
-        plt.legend(handles=handles, title="KMeans clusters", fontsize=9)
-        # plt.show()
+        ax1.legend(handles=handles, title="Agglomerative Clusters", fontsize=9)
+        ax1.set_title("Agglomerative Clustering")
+        ax1.set_xlabel("X Coordinate")
+        ax1.set_ylabel("Y Coordinate")
 
-        return features, predicted_labels, cluster_centers
+        plt.sca(ax2)
+        self.plot_dendrogram(agg, truncate_mode='level', p=5)
+        plt.title("Hierarchical Clustering Dendrogram")
+        plt.xlabel("Sample index")
+        plt.ylabel("Distance")
+
+        plt.tight_layout()
+        plt.show()
+
+    
+    def plot_dendrogram(self, model, **kwargs):
+        counts = np.zeros(model.children_.shape[0])
+        n_samples = len(model.labels_)
+
+        for i, merge in enumerate(model.children_):
+            current_count = 0
+            for child_idx in merge:
+                if child_idx < n_samples:
+                    current_count += 1
+                else:
+                    current_count += counts[child_idx - n_samples]
+            counts[i] = current_count
+
+        linkage_matrix = np.column_stack(
+            [model.children_, model.distances_, counts]).astype(float)
+        dendrogram(linkage_matrix, **kwargs)
+
 
 if __name__ == "__main__":
     dataset_path = 'data/clean_images/*'
@@ -84,7 +106,8 @@ if __name__ == "__main__":
     classes = DataLoader(dataset_path).get_class_names()
     labels = DataLoader(dataset_path).load_dataset()
     clustering = Clustering(len(classes), clean_dataset_path, classes)
-    # clustering.k_means_on_xy_coordinates()
-    # clustering.kmeans_xy()
-    # clustering.k_means_on_xyz_coordinates()
+    clustering.k_means_on_xy_coordinates()
+    clustering.k_means_on_xyz_coordinates()
+    clustering.agglomerative_clustering()
+    
 
