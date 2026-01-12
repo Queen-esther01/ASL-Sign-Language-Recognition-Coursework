@@ -13,3 +13,4 @@ wheels/
 data/CW2_dataset_final
 data/clean_images
 data/clean_dataset
+data/bad_images
