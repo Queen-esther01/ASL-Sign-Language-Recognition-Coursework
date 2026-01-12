@@ -44,9 +44,13 @@ class LandmarkExtractor:
                 # if directories do not exist, create them
                 if not os.path.exists('data/clean_images'):
                     os.makedirs('data/clean_images')
+                if not os.path.exists('data/bad_images'):
+                    os.makedirs('data/bad_images')
                 stemFileName = (Path(os.path.basename(file)).stem) # get folder name A, B, C...
                 if not os.path.exists(f'data/clean_images/{stemFileName}'):
                     os.makedirs(f'data/clean_images/{stemFileName}')
+                if not os.path.exists(f'data/bad_images/{stemFileName}'):
+                    os.makedirs(f'data/bad_images/{stemFileName}')
                 for item in sorted(glob.glob(file + '/*')):
                     filename = item.split('/')[-1]
                     mp_image = mp.Image.create_from_file(item)
@@ -72,13 +76,17 @@ class LandmarkExtractor:
                             'label': stemFileName,
                         })
                         landmarks.append(landmark_per_hand)
+                    else:
+                        # UNCOMMENT TO SAVE BAD IMAGES
+                        # self.save_image(f'data/bad_images/{stemFileName}/{filename}', image)
+                        
         print(f'landmarks {landmarks[0]}, len {len(landmarks)}')
         print(f"images len: {len(images)}")
         # UNCOMMENT TO SAVE DATA TO CSV
-        if not os.path.exists('data/clean_dataset'):
-            os.makedirs('data/clean_dataset')
-        df = pd.DataFrame(rows)
-        df.to_csv(f'data/clean_dataset/data.csv')
+        # if not os.path.exists('data/clean_dataset'):
+        #     os.makedirs('data/clean_dataset')
+        # df = pd.DataFrame(rows)
+        # df.to_csv(f'data/clean_dataset/data.csv')
         return landmarks
 
     def draw_hand_landmarks(self, image, hand_landmarks):

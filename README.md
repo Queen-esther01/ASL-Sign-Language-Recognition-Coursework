@@ -8,13 +8,14 @@ This project implements a complete ML pipeline for ASL hand gesture classificati
 
 1. **Data Loading** - Load 256x256 images from the dataset
 2. **Feature Extraction** - Extract 21 hand landmarks (63 features: x, y, z per landmark) using MediaPipe
-3. **Preprocessing** - Reshape landmarks into feature vectors, apply StandardScaler normalization
-4. **Supervised Classification** - Train and compare three classifiers:
+3. **Data Cleaning** - Separate images into clean (valid landmarks) and bad (failed detection) folders
+4. **Preprocessing** - Reshape landmarks into feature vectors, apply StandardScaler normalization
+5. **Supervised Classification** - Train and compare three classifiers:
     - Support Vector Machine (SVM)
     - Decision Tree
     - k-Nearest Neighbors (KNN with manual implementation)
-5. **Unsupervised Clustering** - K-Means and Agglomerative (Hierarchical) clustering
-6. **Evaluation** - 5-fold cross-validation, hyperparameter tuning via GridSearchCV, confusion matrices, silhouette analysis
+6. **Unsupervised Clustering** - K-Means and Agglomerative (Hierarchical) clustering
+7. **Evaluation** - 5-fold cross-validation, hyperparameter tuning via GridSearchCV, confusion matrices, silhouette analysis
 
 ## Project Structure
 
@@ -28,7 +29,8 @@ This project implements a complete ML pipeline for ASL hand gesture classificati
 │   └── evaluator.py            # Clustering metrics and visualization
 ├── data/
 │   ├── CW2_dataset_final/      # Original dataset (A-J folders with images)
-│   ├── clean_images/           # Preprocessed images with valid landmarks
+│   ├── clean_images/           # Images with valid hand landmarks detected
+│   ├── bad_images/             # Images where MediaPipe failed to detect landmarks
 │   └── clean_dataset/          # Extracted landmarks CSV
 ├── models/
 │   └── mediapipe/              # MediaPipe hand landmarker model
@@ -88,6 +90,13 @@ pip install -r requirements.txt
 cd src
 python landmark_extractor.py
 ```
+
+This will:
+
+-   Process all images in `CW2_dataset_final/`
+-   Extract 21 hand landmarks (x, y, z coordinates) using MediaPipe
+-   Save valid images to `clean_images/` and failed detections to `bad_images/`
+-   Export landmark data to `clean_dataset/data.csv`
 
 ### Run Supervised Learning Models
 
