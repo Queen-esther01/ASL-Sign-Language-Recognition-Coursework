@@ -17,7 +17,7 @@ class Clustering:
         self.classes = classes
 
     def k_means_on_xy_coordinates(self):
-        training_data = Preprocessor(self.data).reshape_data()
+        training_data, _, _ = Preprocessor(self.data).reshape_data()
         training_data = StandardScaler().fit_transform(training_data)
 
         kmeans = cluster.KMeans(n_clusters=self.k, n_init=30, random_state=0)
@@ -47,7 +47,7 @@ class Clustering:
         return features, predicted_labels, cluster_centers, pca_landmarks, pca_centroids
 
     def agglomerative_clustering(self):
-        training_data = Preprocessor(self.data).reshape_data()
+        training_data, _, _ = Preprocessor(self.data).reshape_data()
         training_data = StandardScaler().fit_transform(training_data)
 
         clustering = cluster.AgglomerativeClustering(n_clusters=self.k)
