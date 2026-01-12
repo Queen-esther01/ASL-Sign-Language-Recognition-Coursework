@@ -7,19 +7,19 @@ class Preprocessor:
     ''' 
     '''
 
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, dataset_path):
+        self.dataset_path = dataset_path
 
     def reshape_data(self):
-        data = pd.read_csv(self.data)
+        data = pd.read_csv(self.dataset_path)
         
         x = np.array(data['x'].apply(ast.literal_eval).tolist())
         y = np.array(data['y'].apply(ast.literal_eval).tolist())
 
-        # concatenate x and y arrays -> [[x1, y1], [x2, y2], ...] to [[x1, y1, x2, y2, ...], [x1, y1, x2, y2, ...], ...]
+        # concatenate x and y arrays -> [[x1, x1], [x2, x2], ...] to [[x1, x1, x2, x2, ...], [y1, y1, y2, y2, ...], ...]
         # shape should be (n_samples, 42) -> (n_samples, 21 * 2)
         training_data = np.concatenate((x, y), axis=1)
-        return training_data
+        return training_data, x, y
 
 if __name__ == "__main__":
     dataset_path = 'data/clean_images/*'
